@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Support Chat Widget</title>
+    <style>
+      :root {
+        --bg: #081120;
+        --panel: rgba(13, 21, 40, 0.92);
+        --panel-border: rgba(124, 150, 255, 0.18);
+        --text: #eef2ff;
+        --muted: #9aa7c7;
+        --accent: #7c9cff;
+        --accent-strong: #a78bfa;
+        --user: #183153;
+        --assistant: #13263f;
+        --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(124, 156, 255, 0.22), transparent 32%),
+          radial-gradient(circle at bottom right, rgba(167, 139, 250, 0.16), transparent 28%),
+          var(--bg);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      .shell {
+        width: min(920px, 100%);
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 20px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(20px);
+      }
+
+      .sidebar {
+        padding: 24px;
+      }
+
+      .sidebar h1 {
+        margin: 0 0 12px;
+        font-size: 2rem;
+        line-height: 1.05;
+      }
+
+      .sidebar p,
+      .sidebar label {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .field {
+        margin-top: 18px;
+      }
+
+      .field input {
+        width: 100%;
+        margin-top: 8px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+      }
+
+      .chat {
+        display: flex;
+        flex-direction: column;
+        min-height: 72vh;
+        overflow: hidden;
+      }
+
+      .chat-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .badge {
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        background: rgba(124, 156, 255, 0.14);
+        color: #d8e2ff;
+      }
+
+      .messages {
+        flex: 1;
+        padding: 24px;
+        overflow: auto;
+        display: grid;
+        gap: 14px;
+      }
+
+      .bubble {
+        max-width: 80%;
+        padding: 14px 16px;
+        border-radius: 18px;
+        line-height: 1.55;
+        white-space: pre-wrap;
+      }
+
+      .bubble.user {
+        justify-self: end;
+        background: linear-gradient(135deg, var(--user), rgba(124, 156, 255, 0.24));
+      }
+
+      .bubble.assistant {
+        justify-self: start;
+        background: linear-gradient(135deg, var(--assistant), rgba(167, 139, 250, 0.18));
+      }
+
+      .composer {
+        padding: 16px 24px 24px;
+        display: flex;
+        gap: 12px;
+      }
+
+      .composer textarea {
+        flex: 1;
+        min-height: 56px;
+        max-height: 160px;
+        resize: vertical;
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+      }
+
+      .composer button {
+        border: 0;
+        border-radius: 16px;
+        padding: 0 18px;
+        min-width: 120px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .hint {
+        color: var(--muted);
+        font-size: 0.92rem;
+        margin-top: 10px;
+      }
+
+      @media (max-width: 860px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .bubble {
+          max-width: 92%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="panel sidebar">
+        <h1>Support Chat MVP</h1>
+        <p>Tenant-scoped chat demo connected to the backend API.</p>
+        <div class="field">
+          <label for="tenantId">Tenant ID or slug</label>
+          <input id="tenantId" placeholder="demo-tenant" />
+        </div>
+        <div class="field">
+          <label for="customerName">Customer name</label>
+          <input id="customerName" placeholder="Jane Doe" />
+        </div>
+        <div class="field">
+          <label for="sessionId">Session ID</label>
+          <input id="sessionId" placeholder="demo-session" />
+        </div>
+        <div class="hint">
+          Tip: seed a KB through the API first, then ask questions like "What are your business hours?"
+        </div>
+      </aside>
+
+      <section class="panel chat">
+        <div class="chat-header">
+          <div>
+            <strong>AI Support Assistant</strong>
+            <div class="hint">Direct answers with tenant knowledge base lookup</div>
+          </div>
+          <span class="badge" id="status">Ready</span>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="composer">
+          <textarea id="message" placeholder="Ask a support question..."></textarea>
+          <button id="send">Send</button>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const messagesEl = document.getElementById('messages');
+      const sendBtn = document.getElementById('send');
+      const statusEl = document.getElementById('status');
+      const tenantIdEl = document.getElementById('tenantId');
+      const customerNameEl = document.getElementById('customerName');
+      const sessionIdEl = document.getElementById('sessionId');
+      const messageEl = document.getElementById('message');
+
+      tenantIdEl.value = localStorage.getItem('tenantId') || 'demo-tenant';
+      customerNameEl.value = localStorage.getItem('customerName') || 'Demo Customer';
+      sessionIdEl.value = localStorage.getItem('sessionId') || `session-${Math.random().toString(36).slice(2, 10)}`;
+      localStorage.setItem('sessionId', sessionIdEl.value);
+
+      const scrollToBottom = () => {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      };
+
+      const addBubble = (role, text) => {
+        const bubble = document.createElement('div');
+        bubble.className = `bubble ${role}`;
+        bubble.textContent = text;
+        messagesEl.appendChild(bubble);
+        scrollToBottom();
+      };
+
+      const setStatus = (value) => {
+        statusEl.textContent = value;
+      };
+
+      const sendMessage = async () => {
+        const tenantId = tenantIdEl.value.trim();
+        const customerName = customerNameEl.value.trim();
+        const sessionId = sessionIdEl.value.trim();
+        const message = messageEl.value.trim();
+
+        if (!tenantId || !message) {
+          return;
+        }
+
+        localStorage.setItem('tenantId', tenantId);
+        localStorage.setItem('customerName', customerName);
+        localStorage.setItem('sessionId', sessionId);
+
+        addBubble('user', message);
+        messageEl.value = '';
+        setStatus('Thinking...');
+
+        try {
+          const response = await fetch('/api/chat/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tenantId,
+              tenantSlug: tenantId,
+              customerName,
+              sessionId,
+              message,
+              channel: 'web',
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Failed to send message');
+          }
+
+          addBubble('assistant', data.assistantMessage?.content || 'No response returned.');
+          setStatus('Ready');
+        } catch (error) {
+          addBubble('assistant', `Error: ${error.message}`);
+          setStatus('Error');
+        }
+      };
+
+      sendBtn.addEventListener('click', sendMessage);
+      messageEl.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          sendMessage();
+        }
+      });
+
+      addBubble('assistant', 'Hello. Ask me about support topics and I will check the knowledge base.');
+    </script>
+  </body>
+</html>
