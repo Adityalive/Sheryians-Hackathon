@@ -61,21 +61,29 @@ export const resolveExistingTenant = async ({ tenantId, tenantSlug }) => {
 };
 
 export const getOrCreateTenant = async ({ tenantId, tenantSlug, tenantName }) => {
+  // 1. Try resolving by ID
   if (tenantId && mongoose.isValidObjectId(tenantId)) {
     const byId = await getTenantById(tenantId);
     if (byId) return byId;
   }
 
-  const normalizedSlug = tenantSlug || (!mongoose.isValidObjectId(tenantId) ? tenantId : '');
-
-  if (normalizedSlug) {
-    const bySlug = await getTenantBySlug(normalizedSlug);
+  // 2. Try resolving by Slug
+  const slugToTry = tenantSlug || (!mongoose.isValidObjectId(tenantId) ? tenantId : '');
+  if (slugToTry) {
+    const bySlug = await getTenantBySlug(slugToTry);
     if (bySlug) return bySlug;
   }
 
-  const fallbackName = tenantName || normalizedSlug || 'Demo Tenant';
+  // 3. If we had an ID or Slug but found nothing, don't just create a random one
+  if (tenantId || tenantSlug) {
+    throw new Error(`Tenant not found for identifier: ${tenantId || tenantSlug}`);
+  }
+
+  // 4. Fallback creation (only if no identifier was provided at all)
+  const fallbackName = tenantName || 'Demo Tenant';
   return createTenant({
     name: fallbackName,
-    slug: normalizedSlug || fallbackName,
+    slug: fallbackName,
   });
 };
+

@@ -7,6 +7,7 @@ import {
   getKnowledgeBaseItem,
   listKnowledgeBaseItems,
   seedKnowledgeBase,
+  deleteKnowledgeBaseItem,
 } from '../services/knowledgeBase.service.js';
 
 const DEFAULT_KB = [
@@ -149,3 +150,18 @@ export const getKnowledgeItem = async (req, res) => {
     return res.status(500).json({ message: error.message });
   }
 };
+
+export const deleteTenantKnowledgeBaseItem = async (req, res) => {
+  try {
+    const { tenantId, itemId } = req.params;
+    const tenant = await getOrCreateTenant({ tenantId });
+    const deleted = await deleteKnowledgeBaseItem(tenant._id, itemId);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Knowledge item not found' });
+    }
+    return res.json({ message: 'Item deleted successfully', deleted });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+

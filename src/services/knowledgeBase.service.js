@@ -77,6 +77,11 @@ export const listKnowledgeBaseItems = async (tenantId) =>
 export const getKnowledgeBaseItem = async (tenantId, itemId) =>
   mongoose.isValidObjectId(itemId) ? findOneRecord(KnowledgeBaseItem, 'KnowledgeBaseItem', { tenantId, _id: itemId }) : null;
 
+export const deleteKnowledgeBaseItem = async (tenantId, itemId) => {
+  if (!mongoose.isValidObjectId(itemId)) return null;
+  return KnowledgeBaseItem.findOneAndDelete({ tenantId, _id: itemId });
+};
+
 export const seedKnowledgeBase = async (tenantId, items = []) => {
   const created = [];
 

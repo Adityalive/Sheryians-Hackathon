@@ -2,7 +2,7 @@ import { getOrCreateTenant } from './tenant.service.js';
 import { getOrCreateConversation } from './conversation.service.js';
 import { createMessage, listMessagesForConversation } from './message.service.js';
 import { buildKnowledgeSummary, retrieveKnowledgeBaseContext } from './knowledgeBase.service.js';
-import { generateAssistantReply } from './openai.service.js';
+import { generateAssistantReply } from './groq.service.js';
 
 const createSessionId = (input = {}) =>
   String(input.sessionId || input.conversationId || input.customerEmail || input.customerName || `session-${Date.now()}`)
