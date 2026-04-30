@@ -81,6 +81,16 @@
         color: var(--text);
       }
 
+      select {
+        width: 100%;
+        margin-top: 8px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+      }
+
       .chat {
         display: flex;
         flex-direction: column;
@@ -183,8 +193,8 @@
         <h1>Support Chat MVP</h1>
         <p>Tenant-scoped chat demo connected to the backend API.</p>
         <div class="field">
-          <label for="tenantId">Tenant ID or slug</label>
-          <input id="tenantId" placeholder="demo-tenant" />
+          <label for="tenantSelect">Tenant</label>
+          <select id="tenantSelect"></select>
         </div>
         <div class="field">
           <label for="customerName">Customer name</label>
@@ -221,15 +231,49 @@
       const messagesEl = document.getElementById('messages');
       const sendBtn = document.getElementById('send');
       const statusEl = document.getElementById('status');
-      const tenantIdEl = document.getElementById('tenantId');
+      const tenantSelectEl = document.getElementById('tenantSelect');
       const customerNameEl = document.getElementById('customerName');
       const sessionIdEl = document.getElementById('sessionId');
       const messageEl = document.getElementById('message');
 
-      tenantIdEl.value = localStorage.getItem('tenantId') || 'demo-tenant';
       customerNameEl.value = localStorage.getItem('customerName') || 'Demo Customer';
       sessionIdEl.value = localStorage.getItem('sessionId') || `session-${Math.random().toString(36).slice(2, 10)}`;
       localStorage.setItem('sessionId', sessionIdEl.value);
+
+      const loadTenants = async () => {
+        try {
+          const response = await fetch('/api/tenants');
+          const data = await response.json();
+          const tenants = data.tenants || [];
+
+          tenantSelectEl.innerHTML = '';
+
+          if (!tenants.length) {
+            const option = document.createElement('option');
+            option.value = 'demo-tenant';
+            option.textContent = 'demo-tenant';
+            tenantSelectEl.appendChild(option);
+            return;
+          }
+
+          tenants.forEach((tenant) => {
+            const option = document.createElement('option');
+            option.value = tenant.slug;
+            option.textContent = `${tenant.name} (${tenant.slug})`;
+            tenantSelectEl.appendChild(option);
+          });
+
+          const savedTenant = localStorage.getItem('tenantSlug');
+          if (savedTenant && tenants.some((tenant) => tenant.slug === savedTenant)) {
+            tenantSelectEl.value = savedTenant;
+          }
+        } catch (error) {
+          const option = document.createElement('option');
+          option.value = 'demo-tenant';
+          option.textContent = 'demo-tenant';
+          tenantSelectEl.appendChild(option);
+        }
+      };
 
       const scrollToBottom = () => {
         messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -248,16 +292,16 @@
       };
 
       const sendMessage = async () => {
-        const tenantId = tenantIdEl.value.trim();
+        const tenantSlug = tenantSelectEl.value.trim();
         const customerName = customerNameEl.value.trim();
         const sessionId = sessionIdEl.value.trim();
         const message = messageEl.value.trim();
 
-        if (!tenantId || !message) {
+        if (!tenantSlug || !message) {
           return;
         }
 
-        localStorage.setItem('tenantId', tenantId);
+        localStorage.setItem('tenantSlug', tenantSlug);
         localStorage.setItem('customerName', customerName);
         localStorage.setItem('sessionId', sessionId);
 
@@ -270,8 +314,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              tenantId,
-              tenantSlug: tenantId,
+              tenantSlug,
               customerName,
               sessionId,
               message,
@@ -301,6 +344,7 @@
         }
       });
 
+      loadTenants();
       addBubble('assistant', 'Hello. Ask me about support topics and I will check the knowledge base.');
     </script>
   </body>

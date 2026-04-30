@@ -22,9 +22,16 @@ export const resolveTenantIdentity = (req = {}) => {
 };
 
 export const createTenant = async ({ name, slug, settings = {} }) => {
+  const normalizedSlug = normalizeSlug(slug || name);
+  const existingTenant = await getTenantBySlug(normalizedSlug);
+
+  if (existingTenant) {
+    throw new Error('Tenant slug already exists');
+  }
+
   const payload = {
     name,
-    slug: normalizeSlug(slug || name),
+    slug: normalizedSlug,
     settings,
   };
 
@@ -36,6 +43,22 @@ export const listTenants = async () => findRecords(Tenant, 'Tenant', {}, { sort:
 export const getTenantById = async (tenantId) => findOneRecord(Tenant, 'Tenant', { _id: tenantId });
 
 export const getTenantBySlug = async (slug) => findOneRecord(Tenant, 'Tenant', { slug: normalizeSlug(slug) });
+
+export const resolveExistingTenant = async ({ tenantId, tenantSlug }) => {
+  if (tenantId && mongoose.isValidObjectId(tenantId)) {
+    const byId = await getTenantById(tenantId);
+    if (byId) return byId;
+  }
+
+  const normalizedSlug = tenantSlug || (!mongoose.isValidObjectId(tenantId) ? tenantId : '');
+
+  if (normalizedSlug) {
+    const bySlug = await getTenantBySlug(normalizedSlug);
+    if (bySlug) return bySlug;
+  }
+
+  return null;
+};
 
 export const getOrCreateTenant = async ({ tenantId, tenantSlug, tenantName }) => {
   if (tenantId && mongoose.isValidObjectId(tenantId)) {

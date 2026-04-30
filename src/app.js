@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import connectDB from './config/db.js';
+import authRoutes from './routes/auth.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import tenantRoutes from './routes/tenant.routes.js';
 
@@ -32,6 +33,7 @@ app.get('/', (req, res) => {
     message: 'AI Support backend is running',
     endpoints: {
       chat: '/api/chat/message',
+      auth: '/api/auth/login',
       conversations: '/api/chat/conversations/:conversationId',
       tenants: '/api/tenants',
       widget: '/public/chat-widget.html',
@@ -44,6 +46,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/chat', chatRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
 
 connectDB();

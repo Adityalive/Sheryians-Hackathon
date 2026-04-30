@@ -6,6 +6,7 @@ const memoryStore = {
   Conversation: [],
   Message: [],
   KnowledgeBaseItem: [],
+  User: [],
 };
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
