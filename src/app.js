@@ -5,6 +5,7 @@ import connectDB from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import tenantRoutes from './routes/tenant.routes.js';
+import voiceRoutes from './routes/voice.routes.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -48,6 +49,7 @@ app.get('/health', (req, res) => {
 app.use('/api/chat', chatRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
+app.use('/api/voice', voiceRoutes);
 
 connectDB();
 

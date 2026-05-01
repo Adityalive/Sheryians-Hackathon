@@ -12,21 +12,28 @@ const buildPrompt = ({ tenant, message, history, knowledge }) => {
     .join('\n');
 
   return [
-    `You are a tenant-scoped support assistant for ${tenant.name}.`,
-    'Answer using only the knowledge base context when possible.',
-    'If the answer is not fully covered, ask one concise clarifying question or say you need a support agent in a calm, helpful tone.',
+    `You are a highly precise support bot for ${tenant.name}.`,
+    'Your priority is FACTUAL ACCURACY. Do not provide information that is not explicitly in the Knowledge Base.',
     '',
-    `Knowledge base context:\n${knowledgeBlock}`,
+    'CRITICAL INSTRUCTION:',
+    'Verify if the Knowledge Base actually answers the SPECIFIC intent of the question.',
+    '- If the user asks for PRICE but the context only mentions TIME, say you do not know the price.',
+    '- If the user asks for LOCATION but the context only mentions HOURS, say you do not know the location.',
+    '- NEVER substitute one piece of information for another (e.g., do not give a delivery time when asked about a return cost).',
     '',
-    `Conversation history:\n${historyBlock || 'No previous messages.'}`,
+    'If the information is missing or only partially matches, say: "I am sorry, I do not have specific information about that. Please contact our support team directly."',
     '',
-    `Customer message: ${message}`,
+    `Knowledge Base Context:\n${knowledgeBlock}`,
+    '',
+    `Conversation History:\n${historyBlock || 'No previous messages.'}`,
+    '',
+    `Customer Question: ${message}`,
   ].join('\n');
 };
 
 export const generateAssistantReply = async ({ tenant, message, history = [], knowledge = [] }) => {
   const apiKey = process.env.GROQ_API_KEY;
-  const model = process.env.GROQ_MODEL || 'llama3-8b-8192';
+  const model = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
 
   if (apiKey) {
     try {
@@ -38,11 +45,11 @@ export const generateAssistantReply = async ({ tenant, message, history = [], kn
         },
         body: JSON.stringify({
           model,
-          temperature: 0.2,
+          temperature: 0.1, // Lower temperature for more factual accuracy
           messages: [
             {
               role: 'system',
-              content: 'You are a helpful customer support assistant. Keep answers short, accurate, and tenant-specific.',
+              content: `You are the official support agent for ${tenant.name}. You must never give information that is not in the Knowledge Base. Accuracy is more important than being helpful.`,
             },
             {
               role: 'user',

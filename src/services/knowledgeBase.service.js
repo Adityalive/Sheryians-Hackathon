@@ -99,7 +99,11 @@ export const retrieveKnowledgeBaseContext = async (tenantId, message, limit = 3)
       item,
       score: scoreKnowledgeItem(item, message),
     }))
-    .filter((entry) => entry.score > 0)
+    .filter((entry) => {
+      // Require at least a score of 1.5 (or 2 if we use weighted scoring)
+      // to avoid matching on single common words.
+      return entry.score >= 1.5;
+    })
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 
